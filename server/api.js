@@ -30,17 +30,15 @@ app.get('/', (req, res) => {
   res.json({ message: 'API Cat\'s Ghostly Aura is running!' });
 });
 
-// Подключение к БД (не блокируем экспорт)
+// Подключение к БД
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB подключена'))
-  .catch(err => console.error('❌ Ошибка MongoDB:', err.message));
+  .catch(err => console.error('❌ Ошибка:', err));
 
-console.log('🔍 [DEBUG] перед экспортом');
-
-// Экспорт для Vercel
+// Создаём handler
 const handler = serverless(app);
-console.log('🔍 [DEBUG] handler создан:', typeof handler);
 
-module.exports.handler = handler;
-
-console.log('🔍 [DEBUG] api.js завершён');
+// ЭКСПОРТ ДЛЯ VERCEL (пробуем разные варианты)
+module.exports = handler;           // Вариант 1: прямой экспорт
+module.exports.handler = handler;   // Вариант 2: именованный экспорт
+exports.default = handler;          // Вариант 3: default export
