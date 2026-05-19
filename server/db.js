@@ -5,13 +5,13 @@ let isConnected = false;
 let isConnecting = false;
 
 exports.connectDB = async () => {
-  // Если уже подключены — выходим
   if (isConnected) {
+    console.log('ℹ️ [DB] Уже подключены');
     return;
   }
   
-  // Если уже идёт подключение — ждём его завершения
   if (isConnecting) {
+    console.log('⏳ [DB] Ждём подключения...');
     await new Promise(resolve => {
       const check = setInterval(() => {
         if (isConnected) {
@@ -24,6 +24,7 @@ exports.connectDB = async () => {
   }
   
   isConnecting = true;
+  console.log('🔌 [DB] Начинаю подключение...');
   
   try {
     await mongoose.connect(process.env.MONGO_URI, {
@@ -31,9 +32,9 @@ exports.connectDB = async () => {
       socketTimeoutMS: 45000,
     });
     isConnected = true;
-    console.log('✅ MongoDB подключена');
+    console.log('✅ [DB] MongoDB подключена');
   } catch (err) {
-    console.error('❌ Ошибка MongoDB:', err.message);
+    console.error('❌ [DB] Ошибка:', err.message);
     throw err;
   } finally {
     isConnecting = false;
