@@ -1,8 +1,8 @@
 // server/api.js
-const mongoose = require('mongoose');
 const cors = require('cors');
 const express = require('express');
 const serverless = require('serverless-http');
+const { connectDB } = require('./db'); // Импортируем утилиту
 
 const app = express();
 
@@ -11,32 +11,20 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Глобальная переменная для кеширования подключения
-let isConnected = false;
-
-// Функция подключения к БД
-const connectDB = async () => {
-  if (isConnected) {
-    console.log('✅ MongoDB уже подключена');
-    return;
-  }
-  
+// Middleware для гарантии подключения БД перед каждым запросом
+app.use(async (req, res, next) => {
   try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 5000, // Таймаут 5 секунд
-    });
-    isConnected = true;
-    console.log('✅ MongoDB подключена');
+    await connectDB();
+    next();
   } catch (err) {
-    console.error('❌ Ошибка MongoDB:', err.message);
-    // Не выбрасываем ошибку — позволяем функции работать
+    console.error('DB connection error:', err);
+    res.status(503).json({ error: 'Database unavailable' });
   }
-};
+});
 
-// Тестовый маршрут (быстрый ответ)
-app.get('/', async (req, res) => {
-  await connectDB();
-  res.status(200).json({ 
+// Тестовый маршрут
+app.get('/', (req, res) => {
+  res.json({ 
     message: 'API Cat\'s Ghostly Aura',
     status: 'ok',
     timestamp: new Date().toISOString()
@@ -47,7 +35,7 @@ app.get('/', async (req, res) => {
 const bookingRoutes = require('./routes/bookings');
 app.use('/api/bookings', bookingRoutes);
 
-// 404 handler
+// 404
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
@@ -58,8 +46,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Создаём handler
-const handler = serverless(app);
 
 // === ВСЕ ТРИ ВАРИАНТА ЭКСПОРТА ОДНОВРЕМЕННО ===
 module.exports = handler;           // Вариант 1
