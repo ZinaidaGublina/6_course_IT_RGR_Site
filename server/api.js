@@ -9,17 +9,17 @@ const app = express();
 // Middleware
 app.use(cors({ origin: '*' }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Простой тестовый маршрут (без БД!)
+// Тестовый маршрут
 app.get('/', (req, res) => {
   res.status(200).json({ 
     message: 'API Cat\'s Ghostly Aura is running!',
-    status: 'ok',
-    timestamp: new Date().toISOString()
+    status: 'ok'
   });
 });
 
-// Роуты (подключаем)
+// Роуты
 const bookingRoutes = require('./routes/bookings');
 app.use('/api/bookings', bookingRoutes);
 
@@ -34,11 +34,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Подключение к БД (НЕ ждём его для ответа!)
-// Это важно: функция должна ответить сразу, а БД подключится в фоне
+// Подключение к MongoDB (не блокируем)
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB подключена'))
   .catch(err => console.error('❌ Ошибка MongoDB:', err.message));
 
-// Экспорт для Vercel — ПРОСТОЙ ВАРИАНТ
-module.exports.handler = serverless(app);
+// Создаём handler
+const handler = serverless(app);
+
+// === ВСЕ ТРИ ВАРИАНТА ЭКСПОРТА ОДНОВРЕМЕННО ===
+module.exports = handler;           // Вариант 1
+module.exports.handler = handler;   // Вариант 2
+exports.default = handler;          // Вариант 3
+// =============================================
