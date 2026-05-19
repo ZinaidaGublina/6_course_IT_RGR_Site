@@ -1,27 +1,46 @@
-// server/vercel.js
+// server/api.js
+console.log('🔍 [DEBUG] api.js начал выполняться');
+
 const mongoose = require('mongoose');
 const cors = require('cors');
 const express = require('express');
 const serverless = require('serverless-http');
 
+console.log('🔍 [DEBUG] модули импортированы');
+
 const app = express();
-const bookingRoutes = require('./routes/bookings');
+
+// Пытаемся подключить роуты с обработкой ошибок
+try {
+  const bookingRoutes = require('./routes/bookings');
+  console.log('🔍 [DEBUG] routes/bookings подключены');
+  app.use('/api/bookings', bookingRoutes);
+} catch (err) {
+  console.error('❌ [DEBUG] Ошибка при подключении роутов:', err.message);
+  throw err; // Пробрасываем ошибку, чтобы Vercel её увидел
+}
 
 // Middleware
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-// Routes
-app.use('/api/bookings', bookingRoutes);
-
+// Тестовый маршрут
 app.get('/', (req, res) => {
-  res.json({ message: 'API Cat\'s Ghostly Aura' });
+  console.log('🔍 [DEBUG] GET / вызван');
+  res.json({ message: 'API Cat\'s Ghostly Aura is running!' });
 });
 
-// Подключение к БД
+// Подключение к БД (не блокируем экспорт)
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB подключена'))
-  .catch(err => console.error('❌ Ошибка:', err));
+  .catch(err => console.error('❌ Ошибка MongoDB:', err.message));
+
+console.log('🔍 [DEBUG] перед экспортом');
 
 // Экспорт для Vercel
-module.exports.handler = serverless(app);
+const handler = serverless(app);
+console.log('🔍 [DEBUG] handler создан:', typeof handler);
+
+module.exports.handler = handler;
+
+console.log('🔍 [DEBUG] api.js завершён');
