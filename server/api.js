@@ -11,11 +11,35 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Тестовый маршрут
-app.get('/', (req, res) => {
+// Глобальная переменная для кеширования подключения
+let isConnected = false;
+
+// Функция подключения к БД
+const connectDB = async () => {
+  if (isConnected) {
+    console.log('✅ MongoDB уже подключена');
+    return;
+  }
+  
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000, // Таймаут 5 секунд
+    });
+    isConnected = true;
+    console.log('✅ MongoDB подключена');
+  } catch (err) {
+    console.error('❌ Ошибка MongoDB:', err.message);
+    // Не выбрасываем ошибку — позволяем функции работать
+  }
+};
+
+// Тестовый маршрут (быстрый ответ)
+app.get('/', async (req, res) => {
+  await connectDB();
   res.status(200).json({ 
-    message: 'API Cat\'s Ghostly Aura is running!',
-    status: 'ok'
+    message: 'API Cat\'s Ghostly Aura',
+    status: 'ok',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -33,11 +57,6 @@ app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
-
-// Подключение к MongoDB (не блокируем)
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB подключена'))
-  .catch(err => console.error('❌ Ошибка MongoDB:', err.message));
 
 // Создаём handler
 const handler = serverless(app);
