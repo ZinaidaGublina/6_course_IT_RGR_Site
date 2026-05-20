@@ -3,6 +3,17 @@ const mongoose = require('mongoose');
 const Booking = require('../models/Booking');
 
 export default async function handler(req, res) {
+    // === 🔒 CORS ЗАГОЛОВКИ ===
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Обработка предварительного запроса браузера (preflight)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  // =====================================
+  
   let conn;
   
   try {
